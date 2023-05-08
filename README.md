@@ -1,105 +1,53 @@
-<p align="center">
-  <a href="https://github.com/actions/typescript-action/actions"><img alt="typescript-action status" src="https://github.com/actions/typescript-action/workflows/build-test/badge.svg"></a>
-</p>
+## ssm-to-heroku-env-action
+<img src="./thumbnail.png">
 
-# Create a JavaScript Action using TypeScript
+GitHub Action that sets Heroku environment variables from AWS SSM Parameter Store.
+This Action was created to efficiently synchronize when using the same environment variables on AWS and Heroku.
 
-Use this template to bootstrap the creation of a TypeScript action.:rocket:
+## Inputs
 
-This template includes compilation support, tests, a validation workflow, publishing, and versioning guidance.  
+| Input                      | Required | Default                    | Info                                           |
+|----------------------------|----------|----------------------------|------------------------------------------------|
+| path                    | Yes      | N/A                        | The path to the environment variable in the AWS SSM Parameter Store that you want to set in Heroku                                  |
+| email                | Yes       | N/A | Heroku email                             |
+| token | Yes       | N/A                      | Heroku token
+| app        | Yes       | N/A                       | Heroku app name                      |
 
-If you are new, there's also a simpler introduction.  See the [Hello World JavaScript Action](https://github.com/actions/hello-world-javascript-action)
+**And you need to set AWS credentials by using like [AWS Credentials for GitHub Actions](https://github.com/aws-actions/configure-aws-credentials).**
 
-## Create an action from this template
+## Description
 
-Click the `Use this Template` and provide the new repo details for your action
+First of all, this actions retrieve environment variables from AWS SSM Parameter Store specifying `path` input. This mean when you set like under CLI command, you can retrieve under `'/test/'`　recursively if you specified path as `'/test/'`.
 
-## Code in Main
-
-> First, you'll need to have a reasonably modern version of `node` handy. This won't work with versions older than 9, for instance.
-
-Install the dependencies  
 ```bash
-$ npm install
+aws ssm put-parameter \
+    --name "/test/VALUE1" \
+    --value "test1" \
+    --type String \
+    --region "ap-northeast-3"
 ```
 
-Build the typescript and package it for distribution
-```bash
-$ npm run build && npm run package
-```
+Authentication to heroku is done by writing `email` and `token` in the `.netrc` file as written in the [Heroku CLI Authentication](https://devcenter.heroku.com/articles/authentication).You can get your token from [here](https://dashboard.heroku.com/account). And you need to set your app name to `app` input.
 
-Run the tests :heavy_check_mark:  
-```bash
-$ npm test
+## Usage
 
- PASS  ./index.test.js
-  ✓ throws invalid number (3ms)
-  ✓ wait 500 ms (504ms)
-  ✓ test runs (95ms)
-
-...
-```
-
-## Change action.yml
-
-The action.yml defines the inputs and output for your action.
-
-Update the action.yml with your name, description, inputs and outputs for your action.
-
-See the [documentation](https://help.github.com/en/articles/metadata-syntax-for-github-actions)
-
-## Change the Code
-
-Most toolkit and CI/CD operations involve async operations so the action is run in an async function.
-
-```javascript
-import * as core from '@actions/core';
-...
-
-async function run() {
-  try { 
-      ...
-  } 
-  catch (error) {
-    core.setFailed(error.message);
-  }
-}
-
-run()
-```
-
-See the [toolkit documentation](https://github.com/actions/toolkit/blob/master/README.md#packages) for the various packages.
-
-## Publish to a distribution branch
-
-Actions are run from GitHub repos so we will checkin the packed dist folder. 
-
-Then run [ncc](https://github.com/zeit/ncc) and push the results:
-```bash
-$ npm run package
-$ git add dist
-$ git commit -a -m "prod dependencies"
-$ git push origin releases/v1
-```
-
-Note: We recommend using the `--license` option for ncc, which will create a license file for all of the production node modules used in your project.
-
-Your action is now published! :rocket: 
-
-See the [versioning documentation](https://github.com/actions/toolkit/blob/master/docs/action-versioning.md)
-
-## Validate
-
-You can now validate the action by referencing `./` in a workflow in your repo (see [test.yml](.github/workflows/test.yml))
+You can perform this action whenever you like. Push is fine, and PR comments are also fine.
 
 ```yaml
-uses: ./
-with:
-  milliseconds: 1000
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v2
+      - name: Configure AWS Credentials
+        uses: aws-actions/configure-aws-credentials@v2
+        with:
+          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          aws-region: ap-northeast-3
+      - name: Sets Heroku environment
+        uses: iisyos/ssm-to-heroku-env-action@v1.0
+        with:
+          path: ${{ secrets.PARAMETER_STORE_PATH }}
+          email: ${{ secrets.HEROKU_EMAIL }}
+          token: ${{ secrets.HEROKU_TOKEN }}
+          app: ${{ secrets.HEROKU_APP_NAME }}
 ```
-
-See the [actions tab](https://github.com/actions/typescript-action/actions) for runs of this action! :rocket:
-
-## Usage:
-
-After testing you can [create a v1 tag](https://github.com/actions/toolkit/blob/master/docs/action-versioning.md) to reference the stable and latest V1 action
